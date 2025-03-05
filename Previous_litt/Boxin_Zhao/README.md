@@ -9,3 +9,13 @@ I also found another reference that do something similar to what we want to do:
 - Tugnait, J. K. (2023). Learning High-Dimensional Differential Graphs From Multiattribute Data. IEEE Transactions on Signal Processing, 72, 415-431.
   
 ## Folder Function
+- A.prelim.func: Code to generate the precision matrix of simulation model A.
+- ADMM.new: Code that define the optimization problem to solve and implement the resolution algorithm.
+- B.prelim.func: Code to generate the precision matrix of simulation model B.
+- C.prelim.func: Code to generate the precision matrix of simulation model C.
+- D.prelim.func: Code to generate the precision matrix of simulation model D.
+- FPCA.score: Function to calculate FPC score matrix from observation.
+- ProxAlg_FGM: Implement Qiao's method from Qiao, X., Guo, S., & James, G. M. (2019). Functional graphical models. Journal of the American Statistical Association, 114(525), 211-222.
+- auc: Given an array of TPR and FPR, calculate its AUC ROC.
+- bases.func: Implement Fourier basis function definition; Evaualte Fourier, bspline, exponential and power bases in specific obs.time
+- prec.rec: Given the true adj matrix and the estimated adjacency matrix calculate TP, FP, TN, FN and return precision, recall, TPR and FPR
