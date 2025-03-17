@@ -4,10 +4,9 @@
 ###############################
 p <- 50
 
-
-func.path <- ""
-save.path <- ""
-runtime.path <- ""
+func.path <- "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Previous_litt/Boxin_Zhao_FGM_Neighboorhood/Functions"
+save.path <- "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Previous_litt/Boxin_Zhao_FGM_Neighboorhood/Simulations_with_other_method_comparison/Model_B"
+runtime.path <- "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Previous_litt/Boxin_Zhao_FGM_Neighboorhood/Simulations_with_other_method_comparison/Model_B"
 
 # Packages
 library(fda)
@@ -125,13 +124,13 @@ runtime.fpc <- (time.end.fpc - time.start.fpc)[3]
 #######################################
 library(doParallel)
 
-# cores <- detectCores()
+cores <- detectCores()
 
 # Use the following line to show ADMM iterations for debugging
 # cl <- makeCluster(cores, outfile="")
 
 # Use the following line for faster direct computation
-cl <- makeCluster(28)
+cl <- makeCluster(cores-1)
 
 registerDoParallel(cl)
 
