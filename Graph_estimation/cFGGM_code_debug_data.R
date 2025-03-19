@@ -148,7 +148,7 @@ registerDoParallel(cl)
 res_par <- FGGReg_diff_two_groups(scores, # functional score on a defined basis, nrow: subjects; ncol: functions*n_basis.
                                       n_basis = 5, #Number of bases considered 
                                       covariates  = covariates, #Additional covariates to regress on
-                                      L = 100, # How many penalization term in the Lasso to try
+                                      lambda = 6, # How many penalization term in the Lasso to try
                                       thres.ctrl = 0, # recognition threshold epsilon_n = thres.ctrl * lambda_n,
                                       verbose = TRUE,
                                       tol.abs =1e-4 ,

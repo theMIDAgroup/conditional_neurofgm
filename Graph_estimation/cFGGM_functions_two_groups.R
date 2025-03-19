@@ -241,18 +241,37 @@ ADMM.grplasso.two.groups <- function(A.X, A.Y, d, lambda,
 
 
 
+# ############################# NOTATION ON THE OUTCOMES
+# #The outcomes I'd like
+# Delta_scores <- matrix(0, Mp, ncol(interM))
+# colnames(Delta_scores) <- colnames(interM)
+# rownames(Delta_scores) <- colnames(scores)
+# No_sim_Delta_hat <- matrix(0, Mp, ncol(interM))
+# colnames(No_sim_Delta_hat) <- colnames(interM)
+# rownames(No_sim_Delta_hat) <- colnames(scores)
+# 
+# #The outcomes they have
+# time.start.gX <- proc.time()
+# 
+# G.list.gX <- list()
+# TPR.and.gX <- rep(0,L)
+# FPR.and.gX <- rep(0,L)
+# TPR.or.gX <- rep(0,L)
+# FPR.or.gX <- rep(0,L)
+
 
 
 FGGReg_diff_two_groups <- function(scores, # functional score on a defined basis, nrow: subjects; ncol: functions*n_basis.
-                                  n_basis = 1, #Number of bases considered 
-                                  covariates  = NULL, #Additional covariates to regress on
-                                  L = 100, # How many penalization term in the Lasso to try
-                                  thres.ctrl = 0, # recognition threshold epsilon_n = thres.ctrl * lambda_n,
-                                  verbose = FALSE,
-                                  tol.abs =1e-4 ,
-                                  tol.rel = 1e-4,
-                                  eps = 1e-08) {
+                                   n_basis = 1, #Number of bases considered 
+                                   covariates  = NULL, #Additional covariates to regress on
+                                   lambda = 0 , # Penalization term in the Lasso 
+                                   thres.ctrl = 0, # recognition threshold epsilon_n = thres.ctrl * lambda_n,
+                                   verbose = FALSE,
+                                   tol.abs =1e-4 ,
+                                   tol.rel = 1e-4,
+                                   eps = 1e-08) {
   
+  time.start.gX <- proc.time()
   n <- nrow(scores)
   M <- n_basis
   Mp <- ncol(scores)
@@ -297,22 +316,147 @@ FGGReg_diff_two_groups <- function(scores, # functional score on a defined basis
   
   ## COMPUTE THE MULTIPLE REGRESSION
   
-  #The outcomes I'd like
-  Delta_scores <- matrix(0, Mp, ncol(interM))
-  colnames(Delta_scores) <- colnames(interM)
-  rownames(Delta_scores) <- colnames(scores)
-  No_sim_Delta_hat <- matrix(0, Mp, ncol(interM))
-  colnames(No_sim_Delta_hat) <- colnames(interM)
-  rownames(No_sim_Delta_hat) <- colnames(scores)
+  # Q: A cosa servono d.array e  d ? Quali sono le dimensioni corrette?
+  # Per il momento li ho sostuiti com dei vettori di uni della dimensione coretta (?)
+  d.array <- matrix(1, nrow=p, ncol=(p-1)*M*(q+1))
+  d_out <- list()
+  norm.adj <- rep(NA,p)
+  for(k in 1:p){
+    d_out[[k]] <- d.array[k,]
+    norm.adj[k] <- norm(d_out[[k]],"2")
+  }
   
-  #The outcomes they have
+  # default warm start PQU
+  P.def <- matrix(0, 2*(p-1)*M, M)
+  Q.def <- matrix(0.1, 2*(p-1)*M, M)
+  U.def <- matrix(0.01, 2*(p-1)*M, M)
+  
+  # Repeat the following loop for each node
+  V.array <- foreach(j = 1:p, .combine="rbind", .packages="fda", .export=c('ADMM.grplasso.two.groups','lambda.sup',
+                                                                           'lambda.sup.global.two.groups', 'grp.soft.thres.two.groups',
+                                                                           'objective.function.two.groups')) %dopar% {
+                                                                             message("Processing node ", j)
+                                                                             jth.range.y <- (j-1)*M+(1:M)
+                                                                             A.Y <- as.matrix(interM[, jth.range.y])
+                                                                             jth.range.x <- c(jth.range.y,(j+p-1)*M+(1:M))
+                                                                             A.X <- as.matrix(interM[, -jth.range.x])
+                                                                             groups <- temp_groups[-jth.range.x]
+                                                                             
+                                                                             P <- P.def; Q <- Q.def; U <- U.def
+                                                                             
+                                                                             
+                                                                             V.j <- matrix(NA, 1, 2*p)
+                                                                             
+                                                                             
+                                                                             grp.lasso.result <- tryCatch({
+                                                                                 ADMM.grplasso.two.groups(A.X = A.X, A.Y = A.Y, d = d_out[[j]],
+                                                                                                          lambda=lambda, rho.init=1,
+                                                                                                          P.in=P, Q.in=Q, U.in=U,
+                                                                                                          tol.abs = tol.abs, tol.rel = tol.rel,
+                                                                                                          maxiter = 400)
+                                                                               }, error = function(e) {
+                                                                                 message("Error in ADMM.grplasso.two.groups: ", e$message)
+                                                                                 return(NULL)
+                                                                               })
+                                                                               if (is.null(grp.lasso.result)) next
+                                                                               P <- grp.lasso.result$P
+                                                                               Q <- grp.lasso.result$Q
+                                                                               U <- grp.lasso.result$U
+                                                                               
+                                                                               n_blocks <- nrow(P)/M
+                                                                               # Process the estimated P into a neighborhood selection vector
+                                                                               P.frob <- list()
+                                                                               for(k in 1:n_blocks){
+                                                                                 key <- unique(groups[(k-1)*M + (1:M)])
+                                                                                 if(length(key) > 1){
+                                                                                   message("Error in group definition for block ", k)
+                                                                                   next
+                                                                                 } else {
+                                                                                   P.frob[[key]] <- norm(P[(k-1)*M + (1:M), ], "F")
+                                                                                 }
+                                                                               }
+                                                                               
+                                                                               threshold <- lambda * thres.ctrl
+                                                                               
+                                                                               # Neighbor recognization
+                                                                               V.j <- rep(0, length(P.frob))
+                                                                               for(n_block in 1:length(P.frob)){
+                                                                                 if(!(is.null(P.frob[[n_block]]))){
+                                                                                   if(P.frob[[n_block]] > threshold){
+                                                                                     V.j[n_block] <- 1} 
+                                                                                 }
+                                                                               }
+                                                                               if(j == p){V.j <- c(V.j,0)}
+                                                                             
+                                                                             V.j
+                                                                           }
+  
+  time.end.gX <- proc.time()
+  runtime.gX <- (time.end.gX - time.start.gX)[3]
+  cat("Computational time of: ")
+  cat(runtime.gX)
+  return(V.array)
+}
+ 
+FGGReg_diff_two_groups_SCV <- function(scores, # functional score on a defined basis, nrow: subjects; ncol: functions*n_basis.
+                                  n_basis = 1, #Number of bases considered 
+                                  covariates  = NULL, #Additional covariates to regress on
+                                  L = 100, # How many penalization term in the Lasso to try
+                                  K = 5,
+                                  thres.ctrl = c(0, 0.2, 0.4, 0.8, 1.2, 1.6, 2.0), # recognition threshold epsilon_n = thres.ctrl * lambda_n,
+                                  verbose = FALSE,
+                                  tol.abs =1e-4 ,
+                                  tol.rel = 1e-4,
+                                  eps = 1e-08) {
+  
+  
   time.start.gX <- proc.time()
+  len.t <- length(thres.ctrl)
   
-  G.list.gX <- list()
-  TPR.and.gX <- rep(0,L)
-  FPR.and.gX <- rep(0,L)
-  TPR.or.gX <- rep(0,L)
-  FPR.or.gX <- rep(0,L)
+  # G.mat is the optimal adjacency matrix to save
+  G.mat <- matrix(NA, p, p)
+  
+  n <- nrow(scores)
+  M <- n_basis
+  Mp <- ncol(scores)
+  p <- ceiling(ncol(scores)/M)
+  if (is.null(covariates)) {
+    C <- data.frame(Zeros = rep(0, n))
+    iU <-data.frame(rep(1, n))
+    colnames(iU) <- "(Intercept)"
+    q <- 0
+  } else {
+    numeric_columns <- sapply(covariates, is.numeric)
+    covariates[, numeric_columns] <- scale(covariates[, numeric_columns])
+    C <- model.matrix(~ ., covariates)
+    q <- ncol(C) - 1
+    iU <- C
+  }
+  if (n < (q+1)*Mp) {
+    warning("The sample size is too small! Network estimate may be unreliable!")
+  }
+  
+  ## DEFINITION OF THE DESIGN MATRIX
+  
+  interM <- data.frame(Intercept = rep(1, n))
+  temp_groups <- c(0)
+  
+  if (verbose) {
+    cat("Comuputation of the design matrix \n ")
+  }
+  for(j in 1:(q + 1)){
+    product <- scores * iU[, j]
+    if (j != 1) {
+      original_colnames <- colnames(product)
+      iU_name <- colnames(iU)[j]
+      new_colnames <- paste(iU_name, ":", original_colnames, sep = "")
+      colnames(product) <- new_colnames
+    }
+    for (i in 1:p){temp_groups <- c(temp_groups, rep(i+(p*(j-1)),M))}
+    interM <- cbind(interM, product)
+  }
+  interM <- interM[, -1]
+  temp_groups <- temp_groups[-1]
   
   # Q: A cosa servono d.array e  d ? Quali sono le dimensioni corrette?
   # Per il momento li ho sostuiti com dei vettori di uni della dimensione coretta (?)
@@ -324,18 +468,15 @@ FGGReg_diff_two_groups <- function(scores, # functional score on a defined basis
     norm.adj[k] <- norm(d_out[[k]],"2")
   }
   
-  # Define the sequneces of lambda to try
-  #TO DO: Add condition of doing so only if lambda is not provided
+  
   lambda.max.gX <- lambda.sup.global.two.groups(interM,M, p)
   lambdas.gX <- seq(lambda.max.gX, 0, length.out=L)
   
-  # default warm start PQU
   P.def <- matrix(0, 2*(p-1)*M, M)
   Q.def <- matrix(0.1, 2*(p-1)*M, M)
   U.def <- matrix(0.01, 2*(p-1)*M, M)
   
-  # Repeat the following loop for each node
-  V.array <- foreach(j = 1:p, .combine="rbind", .packages="fda", .export=c('ADMM.grplasso.two.groups','lambda.sup',
+  G.mat <- foreach(j = 1:p, .combine="rbind", .packages="fda", .export=c('ADMM.grplasso.two.groups','lambda.sup',
                                                                            'lambda.sup.global.two.groups', 'grp.soft.thres.two.groups',
                                                                            'objective.function.two.groups')) %dopar% {
     message("Processing node ", j)
@@ -347,11 +488,14 @@ FGGReg_diff_two_groups <- function(scores, # functional score on a defined basis
     
     P <- P.def; Q <- Q.def; U <- U.def
     
+    SCV.mat <- matrix(NA, L, len.t)
     
-    V.j <- matrix(NA, L, 2*p)
+    N.hat.j.dict <- list()
     
     for(l in 1:L){
       lambda <- lambdas.gX[l]
+      # Step 1. Use the full dataset to estimate B.hat(lambda)
+      cat(paste("Lambda ",l," of node ",j,"\n",sep=""))
       grp.lasso.result <- tryCatch({
         ADMM.grplasso.two.groups(A.X = A.X, A.Y = A.Y, d = d_out[[j]],
                                  lambda=lambda, rho.init=1,
@@ -367,6 +511,7 @@ FGGReg_diff_two_groups <- function(scores, # functional score on a defined basis
       Q <- grp.lasso.result$Q
       U <- grp.lasso.result$U
       
+
       n_blocks <- nrow(P)/M
       # Process the estimated P into a neighborhood selection vector
       P.frob <- list()
@@ -379,28 +524,75 @@ FGGReg_diff_two_groups <- function(scores, # functional score on a defined basis
           P.frob[[key]] <- norm(P[(k-1)*M + (1:M), ], "F")
         }
       }
-      
-      threshold <- lambda * thres.ctrl
-      
-      # Neighbor recognization
-      V.jl <- rep(0, length(P.frob))
-      for(n_block in 1:length(P.frob)){
-          if(!(is.null(P.frob[[n_block]]))){
-            if(P.frob[[n_block]] > threshold){
-            V.jl[n_block] <- 1} 
+      N.hat.jl <- list()
+      for(ind.t in 1:len.t){
+        threshold <- lambda * thres.ctrl[ind.t]
+        # Step 2. finding N.hat.j according to each threhold defined by a combination of lambda  and thres.ctrl
+        N.hat.jlt <- rep(FALSE, length(P.frob))
+        for(n_block in 1:length(P.frob)){
+            if(!(is.null(P.frob[[n_block]]))){
+              if(P.frob[[n_block]] > threshold){
+              N.hat.jlt[n_block] <- TRUE} 
+            }
+        }
+        if(j == p){N.hat.jlt <- c(N.hat.jlt,FALSE)}
+        N.hat.jl[[ind.t]]<- N.hat.jlt
+        card.N.hat.jlt <- sum(N.hat.jlt)
+        slice.pM <- rep(N.hat.jlt, each=M)
+        # Check that takes the right columns
+        A.X.eff <- as.matrix(interM[, slice.pM]) # select only the columns of A.X with selected features
+ 
+        SCV.single <- rep(NA, K)
+        for(k in 1:K){
+          if(card.N.hat.jlt > 0){  # Circumstance A. if |N.hat| >=1
+            
+            # Step A3: slicing out kth fold as CV set, the rest as training set
+            fold.k.ind <- seq(floor((k-1)*n/K) + 1, floor(k*n/K)) # index set for the kth fold of SCV
+            fold.k.size <- length(fold.k.ind) # cardinality of Ik under the paper's notation
+            A.X.cv <- A.X.eff[fold.k.ind, ]
+            A.X.train <- A.X.eff[-fold.k.ind, ]
+            A.Y.cv <- A.Y[fold.k.ind, ]
+            A.Y.train <- A.Y[-fold.k.ind, ]
+            
+            # Step A4: calculate B.tilde from a ridge regression
+            B.tilde <- solve(t(A.X.train) %*% A.X.train + 0.1*diag(card.N.hat.jlt * M)) %*% t(A.X.train) %*% A.Y.train
+            
+            # Step A5: evaluate SCV for this single k
+            residual <- A.Y.cv - A.X.cv %*% B.tilde # residual is n*M matrix
+            emp.cov.residual <- t(residual) %*% residual / fold.k.size # empirical covariance of residual
+            SCV.single[k] <- norm(residual,"F")^2 + log(fold.k.size) * card.N.hat.jlt
+            
+          }else{ # Circumstance B. if cardinality of N.hat is 0
+            # Step B3: slicing out kth fold as CV set, the rest as training set
+            fold.k.ind <- seq(floor((k-1)*n/K) + 1, floor(k*n/K)) # index set for the kth fold of SCV
+            fold.k.size <- length(fold.k.ind) # cardinality of Il under the paper's notation
+            A.Y.cv <- A.Y[fold.k.ind, ]
+            A.Y.train <- A.Y[-fold.k.ind, ]
+            
+            # Step B5: evaluate SCV for this single k
+            residual <- A.Y.cv # residual is n*M matrix
+            emp.cov.residual <- t(residual) %*% residual / fold.k.size # empirical covariance of residual
+            SCV.single[k] <- norm(residual,"F")^2
           }
-      }
-      if(j == p){V.jl <- c(V.jl,0)}
-      V.j[l,] <- V.jl
-    }
-    V.j
+      }# end of the k'th fold
+      # Step 6: averaging SCV over K folds for this specific lambda and epsilon
+      SCV.mat[l, ind.t] <- mean(SCV.single)
+      } # end of all thresholds (epsilon) 1:len.t
+      N.hat.j.dict[[l]] <- N.hat.jl
+    } # end of lambda 1:L
+    scv.min <- which(SCV.mat == min(SCV.mat), arr.ind=T)
+    index.optimal <- scv.min[dim(scv.min)[1], ] # there could be multiple. Take the last one
+    l.optimal <- index.optimal[1]
+    ind.t.optimal <- index.optimal[2]
+    lambda.optimal <- lambdas.gX[l.optimal]
+    t.optimal <- thres.ctrl[ind.t.optimal]
+
+    N.hat.optimal <- N.hat.j.dict[[l.optimal]][[ind.t.optimal]]
+    N.hat.optimal
   }
-  
   time.end.gX <- proc.time()
   runtime.gX <- (time.end.gX - time.start.gX)[3]
   cat("Computational time of: ")
   cat(runtime.gX)
-  return(V.array)
-  }
-  
- 
+  return(G.mat)
+}
