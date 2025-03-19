@@ -190,7 +190,7 @@ len.t <- length(thres.ctrl)
 prec.mat <- matrix(NA, L,len.t )
 recall.mat <- matrix(NA, L,len.t)
 
-library("MLmetrics")
+library("caret")
 
 G.mat.opt.f1 <- matrix(NA,p,p)
 for(j in 1:p){
@@ -198,15 +198,16 @@ for(j in 1:p){
  for(l in 1:L){
   for(ind.t in 1:len.t){
     G.mat.try <- ifelse(G.all[[l]][[ind.t]][j,1:p], 1, 0)
-    conf <- table(G.true[j,],G.mat.try)
-    prec.mat[l,ind.t] <- prec.rec(G.true[j,], G.mat.try, type="AND")$prec
-    recall.mat[l,ind.t] <- prec.rec(G.true[j], G.mat.try, type="AND")$rec
-
+    conf <- confusionMatrix(as.factor(G.mat.try), as.factor(G.true[j,]))
+    f1.mat[l,ind.t] <- conf$byClass["F1"]
   }
-}
+ }
+  ind.star <- which(f1.mat ==max(f1.mat), arr.ind=T)[1,]
+  G.mat.opt.f1[j,] <- G.all[[ind.star[1]]][[ind.star[2]]][j,1:p]
   }
 
-
+prec.rec(G.true, G.mat.opt.f1, type="AND")
+prec.rec(G.true, G.mat.opt.f1, type="OR")
 
 
   
