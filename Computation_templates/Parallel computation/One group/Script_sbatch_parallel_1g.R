@@ -4,10 +4,11 @@ time.start <- Sys.time()
 #################################################
 ## 0. USER DEFINED PARAMETERS (MODIFY THIS PART)
 #################################################
-score_path = "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Previous_litt/Boxin_Zhao_FGM_Neighboorhood/Simulations_CV/Model A/results/fpc_score.csv"
-output_path = "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Previous_litt/Boxin_Zhao_FGM_Neighboorhood/Simulations_CV/Model A/results/1g_try_run/"
-name_output = "full_hyper_search"
-n_basis = 5
+score_path = ""
+output_path = ""
+name_output = ""
+func.path = ""
+n_basis = 
 L = 100
 K = 5
 thres.ctrl <- c(0, 0.2, 0.4, 0.8, 1.2, 1.6, 2.0)
@@ -48,16 +49,13 @@ colnames(scores) <- names
 ###### 2.Define functions needed for the computation
 #############################################
 
-func.path <- "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Previous_litt/Boxin_Zhao_FGM_Neighboorhood/Functions"
-
 # Read R files
 source(paste(func.path,"ADMM.new.R", sep="/"))      # ADMM Function
 source(paste(func.path,"prec.rec.R", sep="/"))      # Precision & Recall
 source(paste(func.path,"auc.R", sep="/"))           # Computing AUC from ROC
 source(paste(func.path,"FPCA.score.R", sep="/"))    # Computing FPCA scores
 source(paste(func.path,"bases.func.R", sep="/"))    # Basis functions for FPCA
-source(paste(func.path,"A.prelim.func.R", sep="/")) # For Model A generation
-source(paste(func.path,"ProxAlg_FGM.R", sep="/"))   # FGLasso
+
 
 
 ##############################################
