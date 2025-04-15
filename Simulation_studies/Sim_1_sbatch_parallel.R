@@ -4,9 +4,9 @@ time.start <- Sys.time()
 #################################################
 ## 0. USER DEFINED PARAMETERS (MODIFY THIS PART)
 #################################################
-score_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/freq_scores_reord.csv"
+score_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/original_scores.csv"
 grouping_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/grouping_factor.csv"
-output_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/results/1504_run/"
+output_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/results/original_scores/"
 name_output = "rand_hyper_search"
 n_basis = 8
 L = 100

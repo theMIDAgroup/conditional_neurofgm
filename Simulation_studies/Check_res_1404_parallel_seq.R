@@ -1,7 +1,9 @@
 rm(list=ls(all=TRUE))
 setwd("/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1")
 
-result_folder <- "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/results/1104_run/"
+#result_folder <- "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/results/fourier_scores/"
+#result_folder <- "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/results/pca_scores/"
+result_folder <- "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/results/original_scores/"
 result_name <- "rand_hyper_search_"
 
 num_nodes <- 64
@@ -117,10 +119,8 @@ prec.rec(adj_matrix_pop, G.mat.pop, type="AND")
 prec.rec(adj_matrix_pop, G.mat.pop, type="OR")
 
 
-
-
 G.mat.g <-  ifelse(G.mat[,65:128], 1, 0)
-G.mat.g
+sum(G.mat[,65:128])
 
 prec.rec(adj_matrix_g, G.mat.g, type="AND")
 prec.rec(adj_matrix_g, G.mat.g, type="OR")
@@ -148,11 +148,27 @@ G.mat.g.sim <- G.mat.g + t(G.mat.g)
 G.mat.g.sim <- ifelse(G.mat.g.sim>1, 1, 0)
 table(adj_matrix_g,G.mat.g.sim)
 
+
+############################################
+## CHECK PARAL and SEQUENTIAL give the same results
+############################################
+
 G.mat.parall <- G.mat
-
-
 load("/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/res_1404_sequential.RData")
 
 dim(G.mat) #8192 entries
 sum(G.mat == G.mat.parall) #Computation is the same
+
+############################################
+## CHECK ZHAO
+############################################
+
+rm(list=ls(all=TRUE))
+setwd("/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1")
+
+save.path <- "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/results/zhao_1g"
+load(paste(save.path,"/SCV.A.050.RunInd",1234,".Rdata",sep=""))
+
+prec.rec(adj_matrix_pop, G.mat.gX, type="AND")
+prec.rec(adj_matrix_pop, G.mat.gX, type="OR")
 

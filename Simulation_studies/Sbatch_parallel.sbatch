@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type=FAIL
 #SBATCH --mail-user=alessia.mapelli@fht.org
-#SBATCH --output=/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/logs_parall/%j_Node.log
+#SBATCH --output=/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/logs_parall/original_scores/%j_Node.log
 #SBATCH --partition=cpuq
 #SBATCH --mem=500MB
 #SBATCH --nodes=1
