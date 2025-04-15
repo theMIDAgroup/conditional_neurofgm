@@ -5,9 +5,9 @@
 p <- 50
 
 
-func.path <- ""
-save.path <- ""
-runtime.path <- ""
+func.path <- "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Previous_litt/Boxin_Zhao_FGM_Neighboorhood/Functions"
+save.path <- "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Previous_litt/Boxin_Zhao_FGM_Neighboorhood/Simulations_CV/Model A/results"
+runtime.path <- "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Previous_litt/Boxin_Zhao_FGM_Neighboorhood/Simulations_CV/Model A/results"
 
 # Packages
 library(fda)
@@ -59,7 +59,7 @@ total.time.start <- proc.time()
 # h_ijk = Fourier basis func(t_k) %*% delta_ij + iid error
 
 # 0. Generate precision matrix and real adjacency matrix
-set.seed(run.ind)
+set.seed(1234)
 Theta <- cov.mat.model.A(p, mu) # p*mu by p*mu large square matrix
 G.true <- matrix(0, p, p) # p by p adjacency matrix
 for(i in 1:p){
@@ -119,6 +119,112 @@ for(j in 1:p){
 time.end.fpc <- proc.time()
 runtime.fpc <- (time.end.fpc - time.start.fpc)[3]
 
+write.csv(fpc.score, paste(save.path, "/fpc_score.csv", sep=""))
+
+
+
+
+################## SIMULATE SECOND GROUP
+library(ggplot2)
+library(reshape2)
+
+# Convert matrix to data frame
+adj_df <- melt(Theta)
+colnames(adj_df) <- c("Row", "Col", "Value")
+
+# Plot
+ggplot(adj_df, aes(x = Col, y = Row, fill = Value)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "black") +
+  theme_minimal() +
+  coord_fixed() +
+  scale_y_reverse() +  # to match matrix view
+  labs(title = "Adjacency Matrix", x = "", y = "")
+
+dim(Theta)
+Theta.group <- Theta
+for(i in 1:10){
+  for(j in c(i-2, i-1, i+1, i+2)){
+    if (j >= 1 && j <= 10 && j != i) {  # Ensure valid index and exclude self
+      Theta.group[((i-1)*mu+1):(i*mu), ((j-1)*mu+1):(j*mu)] <- 0
+    }
+  }
+}
+
+# Convert matrix to data frame
+adj_df <- melt(Theta.group )
+colnames(adj_df) <- c("Row", "Col", "Value")
+
+# Plot
+ggplot(adj_df, aes(x = Col, y = Row, fill = Value)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "black") +
+  theme_minimal() +
+  coord_fixed() +
+  scale_y_reverse() +  # to match matrix view
+  labs(title = "Adjacency Matrix", x = "", y = "")
+
+G.true.group <- matrix(0, p, p) # p by p adjacency matrix
+for(i in 1:p){
+  for(j in 1:p){
+    if(sum(abs(Theta.group[((i-1)*mu+1):(i*mu), ((j-1)*mu+1):(j*mu)])) > 0)
+      G.true.group[i,j] <- 1
+  }
+}
+
+# 1. Generating delta
+delta <- rmvnorm(n, sigma = solve(Theta.group))
+
+# 2. Observation time
+obs.time <- seq(1/tau, 1, 1/tau) # vector of observation time points of delta
+
+# 3. Fourier basis function for data generation
+b.mat.list <- list()
+for(j in 1:p){
+  b.mat.list[[j]] <- fda.fourier.mat(obs.time, mu)
+}
+
+# 4. Observations h_ijk
+h <- array(0, c(n, p, tau))
+for(i in 1:n){
+  for(j in 1:p){
+    h[i,j,] <- b.mat.list[[j]] %*% 
+      matrix(delta[i, ((j-1)*mu+1) : (j*mu)], ncol=1) + rnorm(tau, 0, 0.5)
+  }
+}
+
+# Reserved part for PSKL Method
+y.list <- list()
+for(j in 1:p){
+  y.list[[j]] <- h[,j,]
+}
+####################################
+#     PART 2: GAIN FPC SCORE       #
+####################################
+
+# For the use of gX group
+time.start.fpc <- proc.time()
+fpc.score <- numeric(0)
+for(j in 1:p){
+  obs.val.matrix <- matrix(0, nrow=tau, ncol=n)
+  for (i in c(1:n)){
+    obs.val.vec <- as.vector(h[i, j, ])
+    obs.val.matrix[, i] <- obs.val.vec
+  }
+  bspline.basis <- create.bspline.basis(rangeval=c(0, 1), nbasis=M)
+  # Construct a functional data object from the observation
+  # bspline basis is the default setting of this function
+  # It does not mean that the basis function is bspline!
+  fd.object.array <- Data2fd(argvals=obs.time, y=obs.val.matrix, basisobj=bspline.basis)
+  # FPCA process
+  fpc.score <- cbind(fpc.score, pca.fd(fd.object.array, nharm=M)$scores)
+}
+time.end.fpc <- proc.time()
+runtime.fpc <- (time.end.fpc - time.start.fpc)[3]
+
+write.csv(fpc.score, paste(save.path, "/fpc_score_group.csv", sep=""))
+save(G.true, G.true.group, file="Ground_truth_true_diff.rda")
+
 
 #######################################
 ##                                   ##
@@ -127,10 +233,10 @@ runtime.fpc <- (time.end.fpc - time.start.fpc)[3]
 #######################################
 library(doParallel)
 
-# cores <- detectCores()
+cores <- detectCores()
 
 # Use the following line to show ADMM iterations for debugging
-cl <- makeCluster(28, outfile="")
+cl <- makeCluster(cores-1, outfile="")
 
 # Use the following line for faster direct computation
 #cl <- makeCluster(28)
@@ -336,16 +442,88 @@ runtime.gX <- (time.end.gX - time.start.gX)[3]
 #  PART 5: SAVE ADJACENCY MATRIX   #
 ####################################
 output.result <- list(G.mat=G.mat.gX, G.true=G.true)
-save(output.result, file=paste(save.path,"/SCV.A.050.RunInd",run.ind,".Rdata",sep=""))
+save(output.result, file=paste(save.path,"/SCV.A.050.RunInd",1234,".Rdata",sep=""))
 
 ####################################
 #      PART 6: SAVE RUNTIME        #
 ####################################
 scv.runtime <- c(runtime.gX, runtime.fpc)
 save(scv.runtime, file=paste(runtime.path,
-                             "/SCVtime.A.050.Runind",run.ind,".Rdata",sep=""))
+                             "/SCVtime.A.050.Runind",1234,".Rdata",sep=""))
 
 #########################################################
 total.time.end <- proc.time()
 total.time.run <- (total.time.end - total.time.start)[3]
 print(total.time.run)
+
+prec.rec(output.result$G.mat, output.result$G.true, type="AND")
+prec.rec(output.result$G.mat, output.result$G.true, type="OR")
+
+
+my.prec.rec <- function(G.true, G.mat, type=c("AND","OR")){
+  # a function to calculate TP, FP, TN, FN
+  # and return precision, recall, TPR and FPR.
+  # Input:
+  #   G.true, the true p*p adjacency matrix
+  #   G.mat, the estimated p*p adjacency matrix
+  #   type,
+  #     AND: when two nodes both recognize each other as neighbors
+  #     OR: when either of them recognize each other as neighbors
+  # Output:
+  #   prec, precision
+  #   rec, recall
+  #   TPR and FPR, as their names
+  
+  
+  p <- nrow(G.true)
+  TP <- 0; TN <- 0; FP <- 0; FN <- 0
+  
+  if(type=="AND"){
+    for(i in 1:(p-1)){
+      for(j in (i+1):p){
+        if(G.mat[i,j] == 1 & G.mat[j,i] == 1){
+          if(G.true[i,j] == 1)
+            TP <- TP + 1
+          else
+            FP <- FP + 1
+        }else{
+          if(G.true[i,j] == 1)
+            FN <- FN + 1
+          else
+            TN <- TN + 1
+        }
+      }
+    }
+  }else if(type=="OR"){
+    for(i in 1:(p-1)){
+      for(j in (i+1):p){
+        if(G.mat[i,j] == 1 | G.mat[j,i] == 1){
+          if(G.true[i,j] == 1)
+            TP <- TP + 1
+          else
+            FP <- FP + 1
+        }else{
+          if(G.true[i,j] == 1)
+            FN <- FN + 1
+          else
+            TN <- TN + 1
+        }
+      }
+    }
+  }
+  prec <- TP / (TP + FP)
+  if(TP+FP==0) prec <- 1
+  
+  rec <- TP / (TP + FN)
+  if(TP+FN==0) rec <- 0
+  
+  TPR <- TP / (TP + FN)
+  FPR <- FP / (FP + TN)
+  F1 <- 2*TP/(2*TP+FP+FN)
+  return(list(prec=prec, rec=rec, TPR=TPR, FPR=FPR, F1=F1))
+}
+
+my.prec.rec(output.result$G.mat, output.result$G.true, type="AND")
+my.prec.rec(output.result$G.mat, output.result$G.true, type="OR")
+
+

@@ -6,8 +6,8 @@ time.start <- Sys.time()
 #################################################
 score_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/freq_scores_reord.csv"
 grouping_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/grouping_factor.csv"
-output_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/results/"
-name_output = "res_0404_full_hyper_search"
+output_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1/results/1504_run/"
+name_output = "rand_hyper_search"
 n_basis = 8
 L = 100
 K = 5
@@ -16,8 +16,22 @@ tol.abs =1e-4
 tol.rel = 1e-4
 eps = 1e-08
 verbose = FALSE
-p_rand = 0.5
+p.rand.lam = 0.5
+p.rand.thr = 1
 ##############################################
+
+#################################################
+## Include parameter info in the logs
+cat("Score source: ", score_path,"\n")
+cat("Grouping source: ", grouping_path,"\n")
+cat("Parameters: \n")
+cat("n_basis: ", n_basis ,"\n")
+cat("L: ", L ,"\n")
+cat("K : ", K  ,"\n")
+cat("thres.ctrl : ", thres.ctrl  ,"\n")
+cat("p.rand.lam:", p.rand.lam, "\n")
+cat("p.rand.thr:", p.rand.thr, "\n")
+#################################################
 
 
 #############################################
@@ -238,7 +252,10 @@ ADMM.grplasso.two.groups <- function(A.X, A.Y, d, lambda,
     obj.func.path <- c(obj.func.path, obj)
   }
   
-  #message("ADMM converged after ", iter, " iterations.")
+  if(iter == maxiter){
+      cat("ADMM did not converge.")
+  }
+  
   
   result <- list(P=P.new, Q=Q.new, U=U.new,
                  prim.res=prim.resid.vec, dual.res=dual.resid.vec,
@@ -314,15 +331,20 @@ groups <- temp_groups[-jth.range.x]
   
 P <- P.def; Q <- Q.def; U <- U.def
   
-SCV.mat <- matrix(NA, ceiling(L * p_rand), ceiling(len.t * p_rand))
+SCV.mat <- matrix(NA, ceiling(L * p.rand.lam), ceiling(len.t * p.rand.thr))
 #SCV.mat <- matrix(NA, L , len.t )
   
 lambda.max <- lambda.sup(A.X, A.Y)
 lambdas <- exp(seq(log(lambda.max), log(1e-4), length.out = L))
-  
+
+if(p.rand.lam == 1){
+  random.sel.lambdas <- lambdas
+} else{
 set.seed(123+10*j)
-random.sel.lambdas <- lambdas[sample(seq_along(lambdas), ceiling(L * p_rand))]
-#random.sel.lambdas <- lambdas
+random.sel.indexes <- sample(seq_along(lambdas), ceiling(L * p.rand.lam))
+random.sel.lambdas <- lambdas[random.sel.indexes[order(random.sel.indexes)]]
+}
+
 L_random <- length(random.sel.lambdas)
   
 for(l in 1:L_random){
@@ -356,14 +378,16 @@ for(l in 1:L_random){
         next} else {
           P.frob[[key]] <- norm(P[(k-1)*M + (1:M), ], "F")}
     }
-    set.seed(123+10*j)
-    thresholds <- lambda * thres.ctrl
-    random.sel.thresholds <- thresholds[sample(seq_along(thresholds), ceiling(len.t * p_rand))]
-    #random.sel.thresholds <- thresholds
+    if(p.rand.thr == 1){
+      random.sel.thresholds <- thres.ctrl
+    }else{
+      set.seed(234+10*j)
+      random.sel.thresholds <- thres.ctrl[sample(seq_along(thres.ctrl), ceiling(len.t * p.rand.thr))]
+    }
     len.t.random <- length(random.sel.thresholds)
     
     for(ind.t in 1:len.t.random){
-      threshold <- random.sel.thresholds[ind.t]
+      threshold <- lambda * random.sel.thresholds[ind.t]
       # Step 2. finding N.hat.j according to each threhold defined by a combination of lambda  and thres.ctrl
       N.hat.jlt <- rep(FALSE, length(P.frob))
       for(n_block in 1:length(P.frob)){
@@ -421,7 +445,7 @@ index.optimal <- scv.min[dim(scv.min)[1], ] # there could be multiple. Take the 
 l.optimal <- index.optimal[1]
 ind.t.optimal <- index.optimal[2]
 lambda.optimal <- random.sel.lambdas[l.optimal]
-t.optimal <- thres.ctrl[ind.t.optimal]
+t.optimal <- random.sel.thresholds[ind.t.optimal]
 cat("Oprimal lambda: ", lambda.optimal, "\n")
 cat("Oprimal thershold: ", t.optimal, "\n")
   
@@ -455,7 +479,8 @@ for(k in 1:n_blocks){
 N.hat.optimal <- rep(FALSE, length(P.frob))
 for(n_block in 1:length(P.frob)){
     if(!(is.null(P.frob[[n_block]]))){
-      if(P.frob[[n_block]] > t.optimal){
+      threshold <- t.optimal*lambda.optimal
+      if(P.frob[[n_block]] > threshold){
         N.hat.optimal[n_block] <- TRUE} 
     }
   }
@@ -466,4 +491,5 @@ cat("\n Computational time of: ")
 cat( Sys.time() - time.start )
 full_result_path = paste(output_path, name_output, "_", j, ".rda", sep ="")
 save(N.hat.optimal, file =full_result_path)
+cat("Output saved to: ", full_result_path,"\n" )
 

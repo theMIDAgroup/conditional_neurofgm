@@ -9,8 +9,9 @@ save.path <- "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_
 runtime.path <- "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Sim_1"
 
 source(paste(func.path,"cFGGM_functions_two_groups.R", sep="/"))
-
+cat("function source: ", paste(func.path,"cFGGM_functions_two_groups.R", sep="/"),"\n")
 scores <- read.csv(paste(data.path, "freq_scores_reord.csv", sep ="/"))[, -1]
+cat("score source: ", paste(data.path, "freq_scores_reord.csv", sep ="/"),"\n")
 n_basis <- 8
 n_nodes <- ncol(scores)/n_basis
 n_samples <- nrow(scores)
@@ -23,13 +24,19 @@ covariates <- data.frame(group= c(rep(1,24),rep(0,26)))
 covariates$group <- as.factor(covariates$group)
 full_data <- cbind(covariates,scores)
 
-L = 50
+L = 100
 K = 5
 thres.ctrl = c(0, 0.2, 0.4, 0.8, 1.2, 1.6, 2.0)
 tol.abs =1e-4
 tol.rel = 1e-4
 eps = 1e-08
 verbose = TRUE
+cat("Parameters: \n")
+cat("n_basis: ", n_basis ,"\n")
+cat("L: ", L ,"\n")
+cat("K : ", K  ,"\n")
+cat("thres.ctrl : ", thres.ctrl  ,"\n")
+cat("p_rand: 0.5 \n")
 
 len.t <- length(thres.ctrl)
 n <- nrow(scores)
@@ -105,7 +112,8 @@ lambda.max <- lambda.sup(A.X, A.Y)
 lambdas <- exp(seq(log(lambda.max), log(1e-4), length.out = L))
                                                                              
 set.seed(123+10*j)
-random.sel.lambdas <- lambdas[sample(seq_along(lambdas), ceiling(L * 0.5))]
+random.sel.indexes <- sample(seq_along(lambdas), ceiling(L * 0.5))
+random.sel.lambdas <- lambdas[random.sel.indexes[order(random.sel.indexes)]]
 L_random <- length(random.sel.lambdas)
                                                                              
 for(l in 1:L_random){
@@ -139,8 +147,8 @@ for(l in 1:L_random){
                next} else {
             P.frob[[key]] <- norm(P[(k-1)*M + (1:M), ], "F")}
          }
-        set.seed(123+10*j)
         thresholds <- lambda * thres.ctrl
+        set.seed(234+10*j)
         random.sel.thresholds <- thresholds[sample(seq_along(thresholds), ceiling(len.t * 0.5))]
         len.t.random <- length(random.sel.thresholds)
                                                                                
@@ -247,5 +255,6 @@ for(l in 1:L_random){
       cat("\n")
 }
 
-save(G.mat, file = paste(save.path,"res_0304_sequential.RData", sep="/"))
+save(G.mat, file = paste(save.path,"res_1404_sequential.RData", sep="/"))
+cat("Output saved to: ",paste(save.path,"res_1404_sequential.RData", sep="/"), "\n" )
 Sys.time() - time.start.tot
