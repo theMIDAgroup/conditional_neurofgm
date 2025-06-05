@@ -7,7 +7,7 @@ time.start <- Sys.time()
 score_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Model A/A050S_2g_new_scores/fpc_score_100.csv"
 grouping_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Model A/A050S_2g_new_scores/true_grouping_100.csv"
 distance_path ="/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Model A/A050S_2g_new_scores/Node_corr_matrix_100.rda"
-output_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Model A/A050S_2g_new_scores/results_of_screening_procedure/100_node_corr_threhold/"
+output_path = "/group/diangelantonio/users/alessia_mapelli/Brain_simulations/Model A/A050S_2g_new_scores/results_of_screening_procedure/100_node_corr_threshold/"
 name_output = "rand_hyper_search"
 n_basis = 5
 L = 100
@@ -19,10 +19,8 @@ eps = 1e-08
 verbose = FALSE
 p.rand.lam = 0.5
 p.rand.thr = 1
-pre_screen_corr = FALSE
-pre_screen_corr_threshold = NULL
-pre_screen_dist = TRUE
-pre_screen_dist_neigh = 15
+pre_screen = FALSE
+pre_screen_threshold = NULL
 ##############################################
 
 #################################################
@@ -36,8 +34,11 @@ cat("K : ", K  ,"\n")
 cat("thres.ctrl : ", thres.ctrl  ,"\n")
 cat("p.rand.lam:", p.rand.lam, "\n")
 cat("p.rand.thr:", p.rand.thr, "\n")
-if (pre_screen_corr == TRUE) {cat("The pre-screening procedure based on correlation is active \n")}
-if(pre_screen_dist == TRUE) {cat("The pre-screening procedure based on distance is active \n")}
+if (pre_screen) {
+  cat("The pre-screening procedure is active based on: ", distance_path, "\n")
+  if(!(is.null(pre_screen_threshold))){cat("The pre-screening threshold applied is: ", pre_screen_threshold,"\n")}
+  }
+
 #################################################
 
 
@@ -56,10 +57,8 @@ for(l in 1:ncol(scores)){
 colnames(scores) <- names
 covariates <- data.frame( group = as.factor(read.csv(grouping_path)[,-1]))
 full_data <- cbind(covariates,scores)
-if(pre_screen_dist == TRUE){
-  #dist_matrix <- read.csv(dist_path)[, -1]
-  dist_matrix <- outer(1:50, 1:50, FUN = function(x, y) abs(x - y))
-}
+screening_matrix <- get(load(distance_path))
+diag(screening_matrix) <- 0
 
 #############################################
 ###### 2.Define functions needed for the computation
@@ -326,20 +325,11 @@ jth.range.y <- (j-1)*M+(1:M)
 # INCLUDE THE PRE_SCREENING
 ###########
 scr_index <- rep(FALSE, p)
-if (pre_screen_corr) {
-  if (verbose) { cat("Computing correlation matrix \n") }
-  scoredata_matrix <- as.matrix(scores)
-  Scor <- cor(scoredata_matrix)
-  if (verbose) { cat("Done computing correlation matrix \n") }
-  if (is.null(pre_screen_corr_threshold)) { pre_screen_corr_threshold <- quantile(abs(Scor), probs = 0.2) }
+if (pre_screen) {
+  if (is.null(pre_screen_threshold)) { pre_screen_threshold <- quantile(abs(screening_matrix), probs = 0.2) }
   for(it in 1:p){
-      if(it != j && sum(abs(Scor[(j-1)*M + (1:M), (it-1)*M + (1:M)])>pre_screen_corr_threshold)>0){ scr_index[it] <- TRUE}
+      if(screening_matrix [j,it] > pre_screen_threshold){ scr_index[it] <- TRUE}
   }
-} else if(pre_screen_dist){
-  dist_j <- as.numeric(dist_matrix[j,])
-  dist_j[j] <- Inf
-  nearest_indices <- unique(dist_j)[order(unique(dist_j))][1:pre_screen_dist_neigh]
-  scr_index <- dist_j %in% nearest_indices
 } else {
   scr_index <- rep(TRUE, p)
   scr_index[j] <- FALSE
