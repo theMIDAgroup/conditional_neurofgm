@@ -137,4 +137,5 @@ for(iteration in 1:tot_iteration){
 }
 results_metices <- results_metices[-1,]
 write.csv(results_metices, paste(save_path, simulation_name, "/results_metices.csv", sep=""))
+cat("Results saved to ", paste(save_path, simulation_name, "/results_metices.csv", sep=""), "\n")
 #################################################

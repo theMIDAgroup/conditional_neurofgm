@@ -23,11 +23,11 @@ Rscript Check_results_screening_procedure.R config_p50_n200.yaml
 cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/
 
 
-Rscript Data_simulator.R config_p50_n200.yaml
-CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/config_p50_n200.yaml"
+Rscript Data_simulator.R config_p50_n100.yaml
+CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/config_p50_n100.yaml"
 bash Sbatch_parallel_luncher.sh "$CONFIG_FILE"
 
 squeue -u $USER 
 
 # ONCE ALL THE SIMULATIONS ARE COMPLETED
-Rscript Check_results_screening_procedure.R config_p50_n200.yaml
+Rscript Check_results_screening_procedure.R config_p50_n100.yaml
