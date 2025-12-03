@@ -38,7 +38,7 @@ cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_s
 
 Rscript Data_simulator_tests.R config_tests.yaml
 CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/config_tests.yaml"
-bash Sbatch_parallel_luncher.sh "$CONFIG_FILE"
+bash Sbatch_parallel_luncher_tests.sh "$CONFIG_FILE"
 
 squeue -u $USER 
 
@@ -47,6 +47,7 @@ Rscript Check_results_screening_procedure_tests.R config_tests.yaml
 
 
 
+cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/
 
 Rscript Data_simulator_tests.R config_tests_D.yaml
 CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/config_tests_D.yaml"

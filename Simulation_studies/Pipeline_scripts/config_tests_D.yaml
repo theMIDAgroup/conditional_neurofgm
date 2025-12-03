@@ -1,8 +1,8 @@
 # === Simulation Setup ===
 func_path: /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Functions
 save_path: /group/diangelantonio/users/alessia_mapelli/Brain_simulations/systematic_simulations/Model_D/
-simulation_name: p10_n200_sparser
-iteration: 1
+simulation_name: p10_n200_sparser_screening
+iteration: 10
 tot_iteration: 10
 seed_g1: 2025
 seed_g2: 1234
@@ -35,6 +35,6 @@ eps: 0.00000001
 verbose: false
 p_rand_lam: 0.5
 p_rand_thr: 1
-pre_screen: false
+pre_screen: true
 pre_screen_threshold: null
 

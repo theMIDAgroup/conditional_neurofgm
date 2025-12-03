@@ -3,7 +3,7 @@ source /center/healthds/singularity_functions
 
 # Accept config file path as the first argument
 CONFIG_FILE="$1"
-R_SCRIPT="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Sim_1_sbatch_parallel_screening.R"
+R_SCRIPT="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Sim_1_sbatch_parallel_screening_tests.R"
 JOBS_LIMIT=70
 
 # Extract parameters from config
@@ -25,7 +25,7 @@ for i in $(seq 1 "$NODES"); do
   echo "Processing: Node ${i}"
   INPUT=${i}
   LOG_FILE="${LOG_DIR}/Node_${i}.log"
-  RES=$(sbatch --parsable --output="$LOG_FILE" "Sbatch_parallel.sbatch" "$INPUT" "$R_SCRIPT" "$CONFIG_FILE")
+  RES=$(sbatch --parsable --output="$LOG_FILE" "Sbatch_parallel_tests.sbatch" "$INPUT" "$R_SCRIPT" "$CONFIG_FILE")
   echo "Running job ID: $RES"
 done
 
