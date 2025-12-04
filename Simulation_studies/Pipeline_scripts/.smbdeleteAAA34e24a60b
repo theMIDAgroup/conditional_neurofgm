@@ -1,0 +1,61 @@
+# From terminal
+
+# FOR EACH OF THE ITERATION OF THE SIMULATIONS
+# 1. Create a job and run the Data_simulator.R
+#srun --time 0:15:00 --nodes=1 --mem=1GB --tasks-per-node=1 --pty /bin/bash
+cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/
+Rscript Data_simulator.R config_p50_n200.yaml
+#scancel "$SLURM_JOB_ID"
+#sleep 240
+
+# 2. Run the model on the simulated data
+CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/config_p50_n200.yaml"
+cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/
+bash Sbatch_parallel_luncher.sh "$CONFIG_FILE"
+
+squeue -u $USER 
+
+# ONCE ALL THE SIMULATIONS ARE COMPLETED
+Rscript Check_results_screening_procedure.R config_p50_n200.yaml
+
+
+# From terminal
+cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/
+
+
+Rscript Data_simulator.R config_p50_n100.yaml
+CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/config_p50_n100.yaml"
+bash Sbatch_parallel_luncher.sh "$CONFIG_FILE"
+
+squeue -u $USER 
+
+# ONCE ALL THE SIMULATIONS ARE COMPLETED
+Rscript Check_results_screening_procedure.R config_p50_n100.yaml
+
+
+# For tests terminal
+cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/
+
+Rscript Data_simulator_tests.R config_tests.yaml
+CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/config_tests.yaml"
+bash Sbatch_parallel_luncher.sh "$CONFIG_FILE"
+
+squeue -u $USER 
+
+# ONCE ALL THE SIMULATIONS ARE COMPLETED
+Rscript Check_results_screening_procedure_tests.R config_tests.yaml
+
+
+
+cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/
+
+Rscript Data_simulator_tests.R config_tests_D.yaml
+CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/config_tests_D.yaml"
+bash Sbatch_parallel_luncher.sh "$CONFIG_FILE"
+
+squeue -u $USER 
+
+# ONCE ALL THE SIMULATIONS ARE COMPLETED
+Rscript Check_results_screening_procedure_tests.R config_tests_D.yaml
+
+

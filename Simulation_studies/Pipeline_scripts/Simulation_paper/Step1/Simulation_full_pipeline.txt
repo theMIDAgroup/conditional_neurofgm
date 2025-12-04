@@ -1,0 +1,26 @@
+# To simulate one setting
+cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/
+
+#Simulate the data
+Rscript Data_simulator_tests.R config_tests.yaml
+
+CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/config_tests.yaml"
+
+#Repeat for each iteration
+bash Sbatch_parallel_luncher_tests.sh "$CONFIG_FILE"
+
+#Check when the jobs are done
+squeue -u $USER 
+
+# ONCE ALL THE SIMULATIONS ARE COMPLETED
+Rscript Check_results_screening_procedure_tests.R config_tests.yaml
+
+
+
+
+######## NEW PIPELINE
+cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/
+conda activate graph_env
+bash Sbatch_simulations_luncher_tests.sh
+
+
