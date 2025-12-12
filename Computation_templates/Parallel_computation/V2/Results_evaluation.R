@@ -18,12 +18,13 @@ config <- yaml.load_file(yaml_file_path)
 #################################################
 output_path = config$output_path
 name_output = config$name_output
-grouping_path = config$covariate_path
+input_path = config$input_path
 type = config$type
 
-if(file.exists(grouping_path)){
-  covariates <- data.frame( group = as.factor(read.csv(grouping_path)[,-1]))
-  C <- model.matrix(~ ., covariates)
+load(input_path)
+
+if ((exists("covariates_df", envir = .GlobalEnv) && is.data.frame(covariates_df))){
+  C <- model.matrix(~ ., covariates_df)
   n_groups <- ncol(C)
   cov_names <- colnames(C)
   cov_names[1] <- "population"
@@ -88,7 +89,7 @@ for(i in 1:n_groups){
   coord_fixed() +
   scale_y_reverse() +  # to match matrix view
   labs(title = plot_title, x = "", y = "")
-  ggsave(plot, filename=paste0(output_path, "Adjacency_matrix_node_",cov_names[i], ".png"), width=8, height=8, dpi=300)
+  ggsave(plot, filename=paste0(output_path, name_output, "_Adjacency_matrix_node_",cov_names[i], ".png"), width=8, height=8, dpi=300)
 
 
   if(i !=1){
@@ -133,12 +134,12 @@ for(i in 1:n_groups){
     scale_y_reverse() +
     labs(title = paste0("Full Estimated Adjacency Matrix - Differential contribution ", cov_names[i]), x = "", y = "")
 
-  ggsave(plot, filename = paste0(output_path, "Adjacency_matrix_node_diff_weights_",cov_names[i],".png"), width = 8, height = 8, dpi = 300)
+  ggsave(plot, filename = paste0(output_path, name_output, "_Adjacency_matrix_node_diff_weights_",cov_names[i],".png"), width = 8, height = 8, dpi = 300)
 }
   
 }
 
 # Save the matrix
-save(G.our.symm,G.our.symm.weighted, file = file.path(output_path, "Adj_estimation.rda"))
-cat("Results saved to ", paste(output_path, "Adj_estimation.rda", sep=""), "\n")
+save(G.our.symm,G.our.symm.weighted, file = paste0(output_path, name_output, "_Adj_estimation.rda"))
+cat("Results saved to ", paste(output_path, name_output, "_Adj_estimation.rda", sep=""), "\n")
 #################################################

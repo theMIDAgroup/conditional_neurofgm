@@ -14,10 +14,9 @@ time.start <- Sys.time()
 #################################################
 ## 0. USER DEFINED PARAMETERS (MODIFY THIS PART)
 #################################################
-name_output = config$name_output
-score_path = config$score_path
-grouping_path = config$covariate_path
+input_path = config$input_path
 output_path = config$output_path
+name_output = config$name_output
 n_basis = config$n_basis_for_dim_recustion
 L = config$L
 K = config$K
@@ -43,14 +42,12 @@ cat("Parameter source: ", yaml_file_path,"\n")
 ###### 1. Upload all the data needed
 #############################################
 j = as.numeric(args[[2]])
-scores <- read.csv(score_path)[, -1]
-n_nodes <- ncol(scores)/n_basis
-n_samples <- nrow(scores)
-if(file.exists(grouping_path)){
-  covariates <- data.frame( group = as.factor(read.csv(grouping_path)[,-1]))
-} else{
-  covariates <- NULL
-  cat("The coviarate file was not included or invalid. Carring on analysis to estimate the unique population network.")
+load(input_path)
+n_nodes <- ncol(scores_df)/n_basis
+n_samples <- nrow(scores_df)
+if (!(exists("covariates_df", envir = .GlobalEnv) && is.data.frame(covariates_df))){
+  covariates_df <- NULL
+  cat("The coviarate file was not included or invalid. Carring on analysis to estimate the unique population network.") 
 }
 
 if(pre_screen){
@@ -278,19 +275,19 @@ ADMM.grplasso.two.groups <- function(A.X, A.Y, d, lambda,
 ##########################################
 
 len.t <- length(thres.ctrl)
-n <- nrow(scores)
+n <- nrow(scores_df)
 M <- n_basis
-Mp <- ncol(scores)
-p <- ceiling(ncol(scores)/M)
-if (is.null(covariates)) {
+Mp <- ncol(scores_df)
+p <- ceiling(ncol(scores_df)/M)
+if (is.null(covariates_df)) {
   C <- data.frame(Zeros = rep(0, n))
   iU <-data.frame(rep(1, n))
   colnames(iU) <- "(Intercept)"
   q <- 0
 } else {
-  numeric_columns <- sapply(covariates, is.numeric)
-  covariates[, numeric_columns] <- scale(covariates[, numeric_columns])
-  C <- model.matrix(~ ., covariates)
+  numeric_columns <- sapply(covariates_df, is.numeric)
+  covariates_df[, numeric_columns] <- scale(covariates_df[, numeric_columns])
+  C <- model.matrix(~ ., covariates_df)
   q <- ncol(C) - 1
   iU <- C
 }
@@ -304,7 +301,7 @@ if (verbose) {
   cat("Comuputation of the design matrix \n ")
 }
 for(c in 1:(q + 1)){
-  product <- scores * iU[, c]
+  product <- scores_df * iU[, c]
   if (c != 1) {
     original_colnames <- colnames(product)
     iU_name <- colnames(iU)[c]

@@ -1,14 +1,15 @@
 # === Input and Output Paths ===
-score_path: 
-covariate_path:
-#Both need to be saved as csv files with row and columns names
-#If no covariates are included in the model set it to NULL
+input_path: example1.RData
+#RData file containing the score data to be analyzed saved as scores_df and the covraiates to be included in the model as covariates_df
+#Note: 
+# - the covariates_df need to be in a data.frame format with the correct type definition for each covariate (e.g. factor for categorical variables)
+# - the covariates_df can be exluded if no covariates are to be included in the model
 
-n_nodes:
-n_basis_for_dim_recustion: 
+n_nodes: 10
+n_basis_for_dim_recustion: 5
 
-output_path:
-name_output: 
+output_path: Test_computational_template/
+name_output: example
 
 # === Model Parameters ===
 L: 100
@@ -22,4 +23,4 @@ p_rand_lam: 0.5
 p_rand_thr: 1
 
 # === Symmetrization Parameters ===
-type: AND #or OR
+type: OR # Options: OR, AND

@@ -1,14 +1,15 @@
 # === Input and Output Paths ===
-score_path: /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Computation_templates/Parallel_computation/V2/scores_example.csv
-covariate_path: /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Computation_templates/Parallel_computation/V2/grouping_factor_example.csv
-#Both need to be saved as csv files with row and columns names
-#If no covariates are included in the model set it to NULL
+input_path: /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Computation_templates/Parallel_computation/V2/example1.RData
+#RData file containing the score data to be analyzed saved as scores_df and the covraiates to be included in the model as covariates_df
+#Note: 
+# - the covariates_df need to be in a data.frame format with the correct type definition for each covariate (e.g. factor for categorical variables)
+# - the covariates_df can be exluded if no covariates are to be included in the model
 
 n_nodes: 10
 n_basis_for_dim_recustion: 5
 
 output_path: /group/diangelantonio/users/alessia_mapelli/Brain_simulations/Test_computational_template/
-name_output: 2g
+name_output: example
 
 # === Model Parameters ===
 L: 100
