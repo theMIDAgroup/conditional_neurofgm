@@ -2,10 +2,10 @@
 
 # Configuration
 BASE_PATH="/group/diangelantonio/users/alessia_mapelli/Brain_simulations/systematic_simulations/Step1"
-SCRIPT1="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/FuDGE/Litterature_comparison.R"
-SCRIPT2="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/Check_results_screening_procedure_tests_v2.R"
-SCRIPT3="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/FuDGE/Check_results_litt_comp.R"
-JOBS_LIMIT=200
+SCRIPT1="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/FuDGE/Comp_time_comparison.R"
+#SCRIPT2="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/Check_results_screening_procedure_tests_v2.R"
+#SCRIPT3="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/FuDGE/Check_results_litt_comp.R"
+JOBS_LIMIT=300
 
 # Change to base directory
 cd "$BASE_PATH"
@@ -35,7 +35,7 @@ for results_dir in "$BASE_PATH"/p*_n*_n*; do
         
         # Process iteration config files
         for config_file in "$seed_dir"/config_iter_*.yaml; do
-            LOG_FILE="${seed_dir}/results_lit_comparison/logs/Lit_comparison.log"
+            LOG_FILE="${seed_dir}/results_lit_comparison/logs/Comp_time_comparison.log"
             RES=$(sbatch --parsable --output="$LOG_FILE" "/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step1/FuDGE/Sbatch_parallel_litt_comp.sbatch" "$SCRIPT1" "$config_file")
             echo "Running job ID: $RES"
         done
