@@ -1,0 +1,12 @@
+# For tests terminal
+cd /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step2/
+
+Rscript Data_simulator_tests.R config_S6.yaml
+
+CONFIG_FILE="/group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Simulation_studies/Pipeline_scripts/Simulation_paper/Step2/config_S6.yaml"
+bash Sbatch_parallel_luncher_tests.sh "$CONFIG_FILE"
+
+squeue -u $USER 
+
+# ONCE ALL THE SIMULATIONS ARE COMPLETED
+Rscript Check_results_screening_procedure_tests_v2.R config_S6.yaml

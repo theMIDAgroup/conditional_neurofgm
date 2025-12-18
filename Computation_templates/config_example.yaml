@@ -1,12 +1,20 @@
+# === Data preprocessing ===
+observed_functional_data_path: Original_data_example_1.RData
+rec_basis_type: "fourier" #type of basis used to rencontrict the data Options: "fourier", "bsplines"
+time_range: [0, 1] # range of the functional data
+time_points: 100 # number of time points in the functional data
+rec_basis_number: 15 # how many basis are used to reconstrct the data
+
+n_nodes: 10
+dim_red_basis_number: 5  # number of fPC to retain
+
+
 # === Input and Output Paths ===
 input_path: /group/diangelantonio/users/alessia_mapelli/conditional_neurofgm/Computation_templates/Parallel_computation/V2/example1.RData
 #RData file containing the score data to be analyzed saved as scores_df and the covraiates to be included in the model as covariates_df
 #Note: 
 # - the covariates_df need to be in a data.frame format with the correct type definition for each covariate (e.g. factor for categorical variables)
 # - the covariates_df can be exluded if no covariates are to be included in the model
-
-n_nodes: 10
-n_basis_for_dim_recustion: 5
 
 output_path: /group/diangelantonio/users/alessia_mapelli/Brain_simulations/Test_computational_template/
 name_output: example

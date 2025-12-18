@@ -106,7 +106,7 @@ process_step1_folder <- function(step1_path) {
       cat("    Processing seed:", seed_val, "\n")
       
       # Check for results/log folder
-      log_folder <- file.path(seed_folder, "results", "logs")
+      log_folder <- file.path(seed_folder, "results_lit_comparison", "logs")
       
       if (!dir.exists(log_folder)) {
         cat("      Warning: Log folder not found at", log_folder, "\n")
@@ -114,7 +114,7 @@ process_step1_folder <- function(step1_path) {
       }
       
       # Get all .log files
-      log_files <- list.files(log_folder, pattern = "*.log$", full.names = TRUE)
+      log_files <- list.files(log_folder, pattern = "Comp_time_comparison.log$", full.names = TRUE)
       
       if (length(log_files) == 0) {
         cat("      Warning: No .log files found in", log_folder, "\n")
@@ -178,7 +178,7 @@ main <- function() {
   print(results)
   
   # Save the dataframe
-  output_file <- paste0(step1_path, "/computational_times.csv")
+  output_file <- paste0(step1_path, "/computational_times_litt_comp.csv")
   write.csv(results, output_file, row.names = FALSE)
   cat("\nResults saved to:", output_file, "\n")
 
