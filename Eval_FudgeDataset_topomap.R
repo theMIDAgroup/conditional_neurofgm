@@ -55,14 +55,23 @@ adj_group[is.na(adj_group)] = 0
 
 diag(adj_group) <- 0
 
-vals <- adj_group[adj_group != 0 & !is.na(adj_group)] # Remove intermediate values
-lower_thr <- quantile(vals, probs = 0.01, na.rm = TRUE)
-upper_thr <- quantile(vals, probs = 0.99, na.rm = TRUE)
+
+# 
+# vals <- adj_group[adj_group != 0 & !is.na(adj_group)] # Remove intermediate values
+# lower_thr <- quantile(vals, probs = 0.01, na.rm = TRUE)
+# upper_thr <- quantile(vals, probs = 0.99, na.rm = TRUE)
+# 
+# adj_extreme <- adj_group
+# adj_extreme[
+#   adj_group > lower_thr & adj_group < upper_thr
+# ] <- 0
+
+vals <- adj_group[adj_group != 0 & !is.na(adj_group)]
+
+abs_thr <- quantile(abs(vals), probs = 0.97, na.rm = TRUE)
 
 adj_extreme <- adj_group
-adj_extreme[
-  adj_group > lower_thr & adj_group < upper_thr
-] <- 0
+adj_extreme[abs(adj_group) < abs_thr] <- 0
 
 # Step 4. Plot
 adj_plot = adj_extreme
@@ -91,15 +100,15 @@ E(net)$color <- cols[
 ]
 layout(matrix(c(1, 2, 3), nrow = 1), widths = c(4, 0.5, 0.5))
 par(mar = c(0, 0, 0, 0))
-plot(net, layout = layMat, vertex.size = 6,
+plot(net, layout = layMat, vertex.size = 3,
   vertex.label.cex = 0.8, vertex.color = "white", edge.curved = 1, margin = 0)
-# ---- Colorbar ----
+# ---- ColorbarS ----
 par(fig = c(0.82, 0.85, 0.25, 0.75), new = TRUE, mar = c(2,0,2,0))
 image(
   z = t(matrix(seq(min(w), max(w), length.out = ncol), ncol = 1)),
   col = cols,
   xaxt='n',
-  yaxt='n'
+  yaxt='n'S
 )
 axis(4, at=seq(0,1,length.out=5), labels=round(seq(min(w), max(w), length.out=5),2))
 box()
