@@ -132,19 +132,34 @@ for(i in 1:n_groups){
           }else{
             ratio.beta.forbs.kj <- beta.g2.forbs.kj/(P.frob[[j]])
           }
-          if(ratio.beta.forbs.jk > 1 & ratio.beta.forbs.kj > 1){
-            G.cov.simm.warning[j,k] <- 0
-            G.cov.simm.warning[k,j] <- 0
-          } else if (ratio.beta.forbs.jk < 1 & ratio.beta.forbs.kj < 1){
-            G.cov.simm.warning[j,k] <- 0
-            G.cov.simm.warning[k,j] <- 0
-          } else{
-            G.cov.simm.warning[j,k] <- 1
-            G.cov.simm.warning[k,j] <- 1
-          }
+          if(G.cov[j,k] & G.cov[k,j]){
+            
+            if(ratio.beta.forbs.jk > 1 & ratio.beta.forbs.kj > 1){
+              G.cov.simm.warning[j,k] <- 0
+              G.cov.simm.warning[k,j] <- 0
+            } else if (ratio.beta.forbs.jk < 1 & ratio.beta.forbs.kj < 1){
+              G.cov.simm.warning[j,k] <- 0
+              G.cov.simm.warning[k,j] <- 0
+            } else{
+              G.cov.simm.warning[j,k] <- 1
+              G.cov.simm.warning[k,j] <- 1
+            }
             x <- c(ratio.beta.forbs.jk, ratio.beta.forbs.kj)
             G.cov.simm.weighted[j,k] <- exp(mean(log(x)))
             G.cov.simm.weighted[k,j] <- exp(mean(log(x)))
+            
+          }else if (G.cov[j,k]){
+            G.cov.simm.warning[j,k] <- 0
+            G.cov.simm.warning[k,j] <- 0
+            G.cov.simm.weighted[j,k] <- ratio.beta.forbs.jk
+            G.cov.simm.weighted[k,j] <- ratio.beta.forbs.jk
+          }else{
+            G.cov.simm.warning[j,k] <- 0
+            G.cov.simm.warning[k,j] <- 0
+            G.cov.simm.weighted[j,k] <- ratio.beta.forbs.kj
+            G.cov.simm.weighted[k,j] <- ratio.beta.forbs.kj
+          }
+          
         }
       }
     }
