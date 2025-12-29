@@ -50,7 +50,7 @@ for (i in 1:length(node.names)){
 # Step 3. Prepare adjancecy matrix
 adj_group = G.our.symm.weighted$group
 # adj_group[adj_group < thre] = 0
-adj_group = log(adj_group)        # Logscale
+adj_group = log10(adj_group)        # Logscale
 adj_group[is.na(adj_group)] = 0
 
 diag(adj_group) <- 0
@@ -108,7 +108,7 @@ image(
   z = t(matrix(seq(min(w), max(w), length.out = ncol), ncol = 1)),
   col = cols,
   xaxt='n',
-  yaxt='n'S
+  yaxt='n'
 )
 axis(4, at=seq(0,1,length.out=5), labels=round(seq(min(w), max(w), length.out=5),2))
 box()
