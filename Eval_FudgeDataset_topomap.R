@@ -3,10 +3,6 @@ rm(list = ls())
 library("igraph")
 
 # Step 1. Load data
-# folder = "C:\\Users\\saras\\OneDrive\ -\ unige.it\\Documenti\\network_differenziali\\conditional_neurofgm"
-# path_sensors = paste0(folder, "\\EEG_dataset\\", "Position_list.Rdata")
-# path_adj = paste0(folder, "\\EEG_dataset\\seed_1\\results\\", "Test1_Adj_estimation.rda")
-
 folder = ""
 path_sensors = paste0(folder, "EEG_dataset\\", "Position_list.Rdata")
 path_adj = paste0(folder, "EEG_dataset\\seed_1\\results\\", "Test1_Adj_estimation.rda")
@@ -49,67 +45,70 @@ for (i in 1:length(node.names)){
 
 # Step 3. Prepare adjancecy matrix
 adj_group = G.our.symm.weighted$group
-# adj_group[adj_group < thre] = 0
-adj_group = log(adj_group)        # Logscale
+adj_group = log10(adj_group)        # Logscale
 adj_group[is.na(adj_group)] = 0
-
 diag(adj_group) <- 0
 
-
-# 
-# vals <- adj_group[adj_group != 0 & !is.na(adj_group)] # Remove intermediate values
-# lower_thr <- quantile(vals, probs = 0.01, na.rm = TRUE)
-# upper_thr <- quantile(vals, probs = 0.99, na.rm = TRUE)
-# 
-# adj_extreme <- adj_group
-# adj_extreme[
-#   adj_group > lower_thr & adj_group < upper_thr
-# ] <- 0
-
 vals <- adj_group[adj_group != 0 & !is.na(adj_group)]
+greates_vals <- vals[abs(vals)>2]
+perc_greatest <- length(greates_vals)/length(vals)
 
-abs_thr <- quantile(abs(vals), probs = 0.97, na.rm = TRUE)
-
+abs_thr <- quantile(abs(vals), probs =0.0001, na.rm = TRUE)
 adj_extreme <- adj_group
 adj_extreme[abs(adj_group) < abs_thr] <- 0
 
 # Step 4. Plot
-adj_plot = adj_extreme
-adj_plot[adj_plot!=0] <- 1
-colnames(adj_plot) <- node.names
-row.names(adj_plot) <- node.names
-net <- graph_from_adjacency_matrix(adj_plot, mode="undirected")
-V(net)$label.cex <- 2.5
-plot(net, edge.color="blue", vertex.size=2, edge.width=3, margin=0, layout=layMat, 
-     edge.curved=1, vertex.label.dist=1, vertex.label.cex=3)
-#dev.off()
-
+#pdf("diff_network_AUD.pdf", width = 11, height = 7)
 adj_plot = adj_extreme
 colnames(adj_plot) <- node.names
 row.names(adj_plot) <- node.names
 net <- graph_from_adjacency_matrix(adj_plot, mode = "undirected",
             weighted = TRUE,diag = FALSE)
-E(net)$width <- 2
 w <- E(net)$weight
+max_range = max(abs(w))
 ncol <- 1000
 col_fun <- colorRampPalette(c("darkblue", "white", "darkred"))
 cols <- col_fun(ncol)
 E(net)$color <- cols[
-  as.numeric(cut(w, breaks = seq(min(w), max(w), length.out = ncol+1),
+  as.numeric(cut(w, breaks = seq(-max_range, max_range, length.out = ncol+1),
                  include.lowest = TRUE))
 ]
 layout(matrix(c(1, 2, 3), nrow = 1), widths = c(4, 0.5, 0.5))
 par(mar = c(0, 0, 0, 0))
-plot(net, layout = layMat, vertex.size = 3,
-  vertex.label.cex = 0.8, vertex.color = "white", edge.curved = 1, margin = 0)
+ord <- order(abs(E(net)$weight))
+# Rebuild graph with reordered edges
+net2 <- graph_from_data_frame(
+  d = as_data_frame(net, what = "edges")[ord, ],
+  directed = FALSE,
+  vertices = as_data_frame(net, what = "vertices")
+)
+#net <- net %>% igraph::permute.edges(ord)
+#alpha_vals <- scales::rescale(abs(E(net2)$weight), to = c(0.3, 1))
+E(net2)$color <- adjustcolor(E(net2)$color, alpha.f = 0.7)
+plot(net2, layout = layMat,
+     vertex.size = 3, edge.width=2, vertex.label.color = "black", vertex.label.font = 2,
+     vertex.label.dist=1, vertex.label.cex = 2, vertex.color = "orange", 
+     edge.curved = 0.2, margin =0)
 # ---- ColorbarS ----
-par(fig = c(0.82, 0.85, 0.25, 0.75), new = TRUE, mar = c(2,0,2,0))
+par(fig = c(0.8, 0.83, 0.2, 0.8), new = TRUE, mar = c(2,0,2,0))
 image(
-  z = t(matrix(seq(min(w), max(w), length.out = ncol), ncol = 1)),
+  z = t(matrix(seq(-max_range, max_range, length.out = ncol+1), ncol = 1)),
   col = cols,
   xaxt='n',
-  yaxt='n'S
+  yaxt='n'
 )
-axis(4, at=seq(0,1,length.out=5), labels=round(seq(min(w), max(w), length.out=5),2))
+axis(4, at=seq(0,1,length.out=5), cex.axis = 2,
+     labels=round(seq(-max_range, max_range, length.out=5),2))
+
+mtext(
+  expression('Edge weight (log'[10]*' scale)'),
+  side = 4,
+  line = 4,
+  cex = 1.7
+)
+
 box()
+#dev.off()
+
+
 
